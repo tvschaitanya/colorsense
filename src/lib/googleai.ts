@@ -14,16 +14,19 @@ export async function getColorFromText(colorDescription: string) {
     // Initialize the Google AI client with the new SDK
     const ai = new GoogleGenAI({ apiKey });
     
-    // Create the prompt for the model
+    // Create the prompt for the model - improved to handle more complex descriptions
     const prompt = `
     Given this color description: "${colorDescription}"
     
-    Please respond only with a JSON object in this exact format, with no additional text:
+    I want you to identify the exact color being described and respond only with a JSON object in this exact format, with no additional text:
     {
       "colorName": "the most accurate color name",
       "hexCode": "the hex code (e.g., #FF5733)",
       "description": "a very brief description of the color (20 words max)"
     }
+    
+    Be precise - if the input is a specific named color (like "terracotta" or "sage green"), make sure your response matches that exact color.
+    For longer or complex descriptions, extract the core color concept.
     `;
 
     // Generate content using the new SDK format
@@ -60,30 +63,46 @@ export async function getColorFromText(colorDescription: string) {
   }
 }
 
-// New function to process multiple colors
+// Function to process multiple colors
 export async function getMultipleColorsFromText(colorDescriptions: string[]) {
-  // Process each color description in parallel
-  const colorPromises = colorDescriptions.map(async (description) => {
-    try {
-      const result = await getColorFromText(description);
-      return {
-        originalInput: description,
-        ...result,
-        error: null
-      };
-    } catch (error) {
-      console.error(`Error processing color "${description}":`, error);
-      return {
-        originalInput: description,
-        colorName: null,
-        hexCode: null,
-        description: null,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  });
+  // Process each color description in parallel with rate limiting
+  // This helps prevent API rate limit issues with large batches
+  const batchSize = 5; // Process 5 colors at a time
+  const results = [];
   
-  // Wait for all colors to be processed
-  const results = await Promise.all(colorPromises);
+  for (let i = 0; i < colorDescriptions.length; i += batchSize) {
+    const batch = colorDescriptions.slice(i, i + batchSize);
+    
+    // Process each color in the current batch in parallel
+    const batchPromises = batch.map(async (description) => {
+      try {
+        const result = await getColorFromText(description);
+        return {
+          originalInput: description,
+          ...result,
+          error: null
+        };
+      } catch (error) {
+        console.error(`Error processing color "${description}":`, error);
+        return {
+          originalInput: description,
+          colorName: null,
+          hexCode: null,
+          description: null,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        };
+      }
+    });
+    
+    // Wait for the current batch to complete before moving to the next
+    const batchResults = await Promise.all(batchPromises);
+    results.push(...batchResults);
+    
+    // Add a small delay between batches to avoid rate limits if needed
+    if (i + batchSize < colorDescriptions.length) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+  
   return results;
 }

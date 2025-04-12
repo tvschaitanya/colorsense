@@ -4,6 +4,21 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Define our new interfaces
+interface ParsedColor {
+  color: string;
+  category?: string;
+}
+
+interface ColorResult {
+  originalInput: string;
+  colorName: string;
+  hexCode: string;
+  description: string;
+  category?: string; // Add category to results
+  error: string | null;
+}
+
 export default function Home() {
   const [colorInput, setColorInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -12,16 +27,68 @@ export default function Home() {
     hexCode: string;
     description: string;
   } | null>(null);
-  const [multiResults, setMultiResults] = useState<Array<{
-    originalInput: string;
-    colorName: string;
-    hexCode: string;
-    description: string;
-    error: string | null;
-  }> | null>(null);
+  const [multiResults, setMultiResults] = useState<ColorResult[] | null>(null);
   const [error, setError] = useState("");
 
-  // Extract multiple color inputs from text (separated by new lines or bullet points)
+  // Enhanced color parsing function
+  const parseStructuredColorInput = (input: string): ParsedColor[] => {
+    // Split the input into lines
+    const lines = input.split(/\n+/).filter((line) => line.trim() !== "");
+
+    if (lines.length <= 1) {
+      // If no multiple lines, just use the old parser logic
+      return parseMultipleColors(input).map((color) => ({ color }));
+    }
+
+    const results: ParsedColor[] = [];
+    let currentCategory: string | undefined = undefined;
+
+    // Process each line
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+
+      // Check if this line is a category header (ends with colon)
+      if (trimmedLine.includes(":")) {
+        const [category] = trimmedLine.split(":");
+        currentCategory = category.trim();
+
+        // Extract colors from the rest of this line after the colon
+        const colorsInThisLine = trimmedLine
+          .split(":")
+          .slice(1)
+          .join(":")
+          .split(/,|and/)
+          .map((s) => s.trim())
+          .filter((s) => s !== "");
+
+        // Add these colors with the current category
+        colorsInThisLine.forEach((color) => {
+          if (color) results.push({ color, category: currentCategory });
+        });
+      } else {
+        // This line contains colors without a category header on this line
+        // Split by commas or "and"
+        const colors = trimmedLine
+          .split(/,|and/)
+          .map((s) => s.trim())
+          .filter((s) => s !== "");
+
+        // Add these colors with the current category
+        colors.forEach((color) => {
+          if (color) results.push({ color, category: currentCategory });
+        });
+      }
+    }
+
+    // If no results were found, fall back to the original parser
+    if (results.length === 0) {
+      return parseMultipleColors(input).map((color) => ({ color }));
+    }
+
+    return results;
+  };
+
+  // Keep the old parser as a fallback
   const parseMultipleColors = (input: string): string[] => {
     // Split by new lines first
     let colors = input.split(/\n+/).filter((line) => line.trim() !== "");
@@ -54,18 +121,19 @@ export default function Home() {
     setMultiResults(null);
 
     try {
-      // Check if we have multiple colors
-      const colorInputs = parseMultipleColors(colorInput);
-      const isMultiColor = colorInputs.length > 1;
+      // Parse color inputs with the new parser
+      const parsedColors = parseStructuredColorInput(colorInput);
+      const isMultiColor = parsedColors.length > 1;
 
       if (isMultiColor) {
         // Process multiple colors
+        const colorDescriptions = parsedColors.map((pc) => pc.color);
         const response = await fetch("/api/color", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ colorDescriptions: colorInputs }),
+          body: JSON.stringify({ colorDescriptions }),
         });
 
         const data = await response.json();
@@ -74,7 +142,15 @@ export default function Home() {
           throw new Error(data.error || "Failed to get color information");
         }
 
-        setMultiResults(data.results);
+        // Add categories to results
+        const resultsWithCategories = data.results.map(
+          (result: any, index: number) => ({
+            ...result,
+            category: parsedColors[index]?.category,
+          })
+        );
+
+        setMultiResults(resultsWithCategories);
       } else {
         // Process single color
         const response = await fetch("/api/color", {
@@ -82,7 +158,7 @@ export default function Home() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ colorDescription: colorInput }),
+          body: JSON.stringify({ colorDescription: parsedColors[0].color }),
         });
 
         const data = await response.json();
@@ -100,6 +176,18 @@ export default function Home() {
       setIsLoading(false);
     }
   };
+
+  // Group results by category
+  const groupedResults = multiResults
+    ? multiResults.reduce((groups: Record<string, ColorResult[]>, result) => {
+        const category = result.category || "Other";
+        if (!groups[category]) {
+          groups[category] = [];
+        }
+        groups[category].push(result);
+        return groups;
+      }, {})
+    : {};
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-br from-gray-50 to-gray-100">
@@ -138,9 +226,13 @@ export default function Home() {
                 id="colorDescription"
                 value={colorInput}
                 onChange={(e) => setColorInput(e.target.value)}
-                placeholder="e.g. sunset orange, deep ocean blue, warm taupe, camel, mushroom brown"
+                placeholder="e.g. Earthy Neutrals: camel, taupe, warm beige"
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 h-32"
               />
+              <p className="text-xs text-gray-500">
+                Pro tip: Use categories like "Blues: navy, sky blue" for
+                grouping colors
+              </p>
             </div>
 
             <motion.button
@@ -225,57 +317,77 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Multiple Color Results */}
+      {/* Multiple Color Results - Grouped by Category */}
       <AnimatePresence>
         {multiResults && multiResults.length > 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
+            className="w-full max-w-5xl"
           >
-            {multiResults.map((result, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-xl shadow-md overflow-hidden h-full"
-              >
-                {result.error ? (
-                  <div className="p-4 bg-red-50">
-                    <h3 className="font-semibold text-red-700">
-                      {result.originalInput}
-                    </h3>
-                    <p className="text-sm text-red-600">{result.error}</p>
+            {Object.entries(groupedResults).map(
+              ([category, colors], categoryIndex) => (
+                <motion.div
+                  key={categoryIndex}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ delay: categoryIndex * 0.1 }}
+                  className="mb-8"
+                >
+                  <h2 className="text-xl font-bold text-gray-800 mb-3 border-b pb-2">
+                    {category}
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {colors.map((result, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="bg-white rounded-xl shadow-md overflow-hidden h-full"
+                      >
+                        {result.error ? (
+                          <div className="p-4 bg-red-50">
+                            <h3 className="font-semibold text-red-700">
+                              {result.originalInput}
+                            </h3>
+                            <p className="text-sm text-red-600">
+                              {result.error}
+                            </p>
+                          </div>
+                        ) : (
+                          <>
+                            <div
+                              className="h-24 transition-colors duration-700 ease-in-out"
+                              style={{ backgroundColor: result.hexCode }}
+                            ></div>
+                            <div className="p-4">
+                              <div className="text-sm text-gray-500 mb-1">
+                                {result.originalInput}
+                              </div>
+                              <div className="flex items-center justify-between mb-1">
+                                <h3 className="text-base font-semibold">
+                                  {result.colorName}
+                                </h3>
+                                <span className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                  {result.hexCode}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-600">
+                                {result.description}
+                              </p>
+                            </div>
+                          </>
+                        )}
+                      </motion.div>
+                    ))}
                   </div>
-                ) : (
-                  <>
-                    <div
-                      className="h-24 transition-colors duration-700 ease-in-out"
-                      style={{ backgroundColor: result.hexCode }}
-                    ></div>
-                    <div className="p-4">
-                      <div className="text-sm text-gray-500 mb-1">
-                        {result.originalInput}
-                      </div>
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className="text-base font-semibold">
-                          {result.colorName}
-                        </h3>
-                        <span className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                          {result.hexCode}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        {result.description}
-                      </p>
-                    </div>
-                  </>
-                )}
-              </motion.div>
-            ))}
+                </motion.div>
+              )
+            )}
           </motion.div>
         )}
       </AnimatePresence>
