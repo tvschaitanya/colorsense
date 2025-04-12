@@ -95,4 +95,4 @@ Contributions welcome! Please feel free to submit a Pull Request.
 ## Acknowledgements
 
 - Google AI Studio for providing the Gemini API (though any AI API can be used)
-- The Next.js team for their framework
+- The Next.js team for their framework.
