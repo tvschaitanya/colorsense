@@ -2,113 +2,87 @@
 
 **ColorSense** is an AI-powered web application that transforms text descriptions of colors into visual representations with accurate hex codes and descriptions.
 
-![ColorSense Demo](https://via.placeholder.com/800x400?text=ColorSense+Demo)
+## Screenshots
 
-## What is ColorSense?
+![ColorSense Demo](/screenshots/Main-Interface.jpeg)
 
-ColorSense bridges the gap between natural language and color visualization. Ever tried describing a specific color to someone? "It's like a sunset orange, but more muted" or "A warm taupe with hints of pink" - ColorSense understands these descriptions and converts them into actual colors you can see and use in your projects.
+_Main interface showing color description input and results_
 
-**Key Features:**
+![Multiple Color Results](/screenshots/Results-Output.jpeg)
 
-- Convert natural language color descriptions to visual colors with hex codes
-- Process multiple colors at once (separated by new lines, bullet points, or commas)
-- Beautiful, responsive UI with smooth animations
-- Display color name, hex code, and a brief description for each color
+_Example of multiple color descriptions processed simultaneously_
 
-## Why ColorSense?
+## The Problem ColorSense Solves
 
-ColorSense was created to solve several practical problems:
+It can be difficult to visualize colors from text descriptions. When AI suggests colors like "warm taupe" or "muted sunset orange" for your next purchase, these descriptions might be hard to picture.
 
-1. **Design Communication** - Helps designers and clients communicate color preferences more intuitively
-2. **Accessibility** - Allows people to visualize colors described in text
-3. **Creative Exploration** - Enables experimentation with color palettes using natural language
-4. **Education** - Teaches the relationship between color descriptions and visual representations
+I created ColorSense after facing this problem myself. While shopping, I asked ChatGPT for color suggestions and received several color names I couldn't easily visualize. Googling each color individually took too much time.
 
-## Tech Stack
+## What ColorSense Does
 
-ColorSense is built with modern web technologies:
+ColorSense connects language with visualization by:
 
-- **Next.js 15.3.0** - React framework with App Router
-- **React 19.0.0** - UI library
-- **TypeScript** - Type-safe JavaScript
-- **Framer Motion** - Animations library
-- **Google Generative AI** - AI model for color interpretation (Gemini 2.0 Flash-Lite)
-- **Tailwind CSS 4** - Utility-first CSS framework
+- Converting text color descriptions into visual colors with hex codes
+- Processing multiple colors at once (separated by lines, bullet points, or commas)
+- Providing color names, hex codes, and brief descriptions for each color
+- Displaying everything in a clean, responsive interface with smooth animations
+
+## Key Benefits
+
+- **Better Communication**: Helps designers and clients discuss color preferences clearly
+- **Improved Accessibility**: Makes text-described colors visible immediately
+- **Creative Tool**: Helps explore color palettes using natural language
+- **Learning Resource**: Helps understand color terminology and representation
+
+## Technology Behind ColorSense
+
+Built with:
+
+- Next.js 15.3.0 with App Router
+- React 19.0.0
+- TypeScript
+- Framer Motion
+- Google Generative AI (Gemini 2.0 Flash-Lite)
+- Tailwind CSS 4
+
+You can use any AI API with this project. I used Google AI Studio's API for this implementation.
 
 ## Getting Started
 
-### Prerequisites
+### Requirements
 
-- Node.js 18.17.0 or later
-- pnpm (recommended), npm, or yarn
-- Google AI Studio API Key
+- Node.js 18.17.0+
+- Package manager (pnpm recommended)
+- AI API Key (Google AI Studio or any of your choice)
 
-### Installation
+### Quick Setup
 
 1. Clone the repository
+2. Install dependencies with `pnpm install`
+3. Add your API key to a `.env.local` file
+4. Update environment variables in `next.config.ts`
+5. Run `pnpm dev`
+6. Open http://localhost:3000 in your browser
 
-   ```bash
-   git clone https://github.com/yourusername/colorsense.git
-   cd colorsense
-   ```
+## Using ColorSense
 
-2. Install dependencies
+Enter color descriptions like:
 
-   ```bash
-   pnpm install
-   ```
-
-3. Create a `.env.local` file in the root directory
-
-   ```
-   GOOGLE_AI_API_KEY=your_google_ai_studio_api_key
-   ```
-
-4. Update `next.config.ts` to include environment variables
-
-   ```typescript
-   import type { NextConfig } from "next";
-
-   const nextConfig: NextConfig = {
-     env: {
-       GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY,
-     },
-   };
-
-   export default nextConfig;
-   ```
-
-5. Run the development server
-
-   ```bash
-   pnpm dev
-   ```
-
-6. Open [http://localhost:3000](http://localhost:3000) in your browser
-
-## How to Use
-
-1. Enter a color description (e.g., "sunset orange", "deep ocean blue")
-2. For multiple colors, enter each on a new line or use bullet points:
-   ```
-   * Warm taupe
-   * Camel
-   * Mushroom brown
-   ```
-3. Click "Get Colors" to generate visualizations for each color
-
-## Deployment
-
-ColorSense can be deployed on Vercel or any other hosting service that supports Next.js:
-
-```bash
-pnpm build
-pnpm start
+```
+* Warm taupe
+* Camel
+* Mushroom brown
 ```
 
-## Getting a Google AI API Key
+Click "Get Colors" to see them visualized instantly.
 
-1. Visit [Google AI Studio](https://ai.google.dev/)
+## Why AI for Color Interpretation?
+
+I searched for existing color libraries but found that many AI-generated color names don't exist in standard libraries. Instead of building a new library, I decided to use AI to interpret and visualize these colors directly. You can use any AI API, though I found Google AI Studio's API worked well for this purpose.
+
+## Getting an API Key
+
+1. Visit [Google AI Studio](https://ai.google.dev/) (or your preferred AI provider)
 2. Create an account or sign in
 3. Navigate to the API section
 4. Create a new API key
@@ -116,7 +90,7 @@ pnpm start
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions welcome! Please feel free to submit a Pull Request.
 
 ## License
 
@@ -124,6 +98,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgements
 
-- Google AI Studio for providing the Gemini API
-- The Next.js team for their excellent framework
+- Google AI Studio for providing the Gemini API (though any AI API can be used)
+- The Next.js team for their framework
 - All contributors and users of ColorSense
