@@ -92,12 +92,7 @@ I searched for existing color libraries but found that many AI-generated color n
 
 Contributions welcome! Please feel free to submit a Pull Request.
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
 ## Acknowledgements
 
 - Google AI Studio for providing the Gemini API (though any AI API can be used)
 - The Next.js team for their framework
-- All contributors and users of ColorSense
