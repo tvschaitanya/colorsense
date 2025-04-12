@@ -1,103 +1,293 @@
-import Image from "next/image";
+// src/app/page.tsx
+"use client";
+
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [colorInput, setColorInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [singleResult, setSingleResult] = useState<{
+    colorName: string;
+    hexCode: string;
+    description: string;
+  } | null>(null);
+  const [multiResults, setMultiResults] = useState<Array<{
+    originalInput: string;
+    colorName: string;
+    hexCode: string;
+    description: string;
+    error: string | null;
+  }> | null>(null);
+  const [error, setError] = useState("");
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  // Extract multiple color inputs from text (separated by new lines or bullet points)
+  const parseMultipleColors = (input: string): string[] => {
+    // Split by new lines first
+    let colors = input.split(/\n+/).filter((line) => line.trim() !== "");
+
+    // If no new lines, check for bullet points or asterisks
+    if (colors.length <= 1) {
+      colors = input.split(/[•*-]\s*/).filter((line) => line.trim() !== "");
+    }
+
+    // If still no multiple items, check for commas
+    if (colors.length <= 1) {
+      colors = input.split(/,\s*/).filter((line) => line.trim() !== "");
+    }
+
+    // If we only have one entry (or empty), return the original input as a single item
+    return colors.length >= 1 ? colors : [input];
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!colorInput.trim()) {
+      setError("Please enter a color description");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+    setSingleResult(null);
+    setMultiResults(null);
+
+    try {
+      // Check if we have multiple colors
+      const colorInputs = parseMultipleColors(colorInput);
+      const isMultiColor = colorInputs.length > 1;
+
+      if (isMultiColor) {
+        // Process multiple colors
+        const response = await fetch("/api/color", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ colorDescriptions: colorInputs }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to get color information");
+        }
+
+        setMultiResults(data.results);
+      } else {
+        // Process single color
+        const response = await fetch("/api/color", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ colorDescription: colorInput }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to get color information");
+        }
+
+        setSingleResult(data);
+      }
+    } catch (err: any) {
+      console.error("Error details:", err);
+      setError(err.message || "Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-br from-gray-50 to-gray-100">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center mb-8"
+      >
+        <h1 className="text-4xl font-bold text-gray-800 mb-2">ColorSense</h1>
+        <p className="text-gray-600">
+          Describe colors and visualize them with AI
+        </p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-md bg-white rounded-xl shadow-lg overflow-hidden mb-8"
+      >
+        <div className="p-6">
+          <motion.form
+            key="form"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            onSubmit={handleSubmit}
+            className="space-y-4"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <div className="space-y-2">
+              <label
+                htmlFor="colorDescription"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Describe colors
+              </label>
+              <textarea
+                id="colorDescription"
+                value={colorInput}
+                onChange={(e) => setColorInput(e.target.value)}
+                placeholder="e.g. sunset orange, deep ocean blue, warm taupe, camel, mushroom brown"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 h-32"
+              />
+            </div>
+
+            <motion.button
+              type="submit"
+              className="w-full py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <span className="flex items-center justify-center">
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Processing...
+                </span>
+              ) : (
+                "Get Colors"
+              )}
+            </motion.button>
+
+            {error && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm"
+              >
+                <p className="font-medium mb-1">Error:</p>
+                <p>{error}</p>
+                {error.includes("API key") && (
+                  <p className="mt-2 text-xs">
+                    Make sure you've created a .env.local file with your
+                    GOOGLE_AI_API_KEY
+                  </p>
+                )}
+              </motion.div>
+            )}
+          </motion.form>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </motion.div>
+
+      {/* Single Color Result */}
+      <AnimatePresence>
+        {singleResult && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="w-full max-w-md bg-white rounded-xl shadow-lg overflow-hidden mb-4"
+          >
+            <div
+              className="h-32 transition-colors duration-700 ease-in-out"
+              style={{ backgroundColor: singleResult.hexCode }}
+            ></div>
+            <div className="p-6 bg-white">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xl font-bold">{singleResult.colorName}</h3>
+                <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+                  {singleResult.hexCode}
+                </span>
+              </div>
+              <p className="text-gray-600">{singleResult.description}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Multiple Color Results */}
+      <AnimatePresence>
+        {multiResults && multiResults.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
+          >
+            {multiResults.map((result, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-white rounded-xl shadow-md overflow-hidden h-full"
+              >
+                {result.error ? (
+                  <div className="p-4 bg-red-50">
+                    <h3 className="font-semibold text-red-700">
+                      {result.originalInput}
+                    </h3>
+                    <p className="text-sm text-red-600">{result.error}</p>
+                  </div>
+                ) : (
+                  <>
+                    <div
+                      className="h-24 transition-colors duration-700 ease-in-out"
+                      style={{ backgroundColor: result.hexCode }}
+                    ></div>
+                    <div className="p-4">
+                      <div className="text-sm text-gray-500 mb-1">
+                        {result.originalInput}
+                      </div>
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="text-base font-semibold">
+                          {result.colorName}
+                        </h3>
+                        <span className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                          {result.hexCode}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        {result.description}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="mt-6 text-sm text-gray-500"
+      >
+        Powered by Google AI Studio
+      </motion.div>
+    </main>
   );
 }

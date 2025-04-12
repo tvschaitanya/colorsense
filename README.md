@@ -1,36 +1,129 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ColorSense 🎨
+
+**ColorSense** is an AI-powered web application that transforms text descriptions of colors into visual representations with accurate hex codes and descriptions.
+
+![ColorSense Demo](https://via.placeholder.com/800x400?text=ColorSense+Demo)
+
+## What is ColorSense?
+
+ColorSense bridges the gap between natural language and color visualization. Ever tried describing a specific color to someone? "It's like a sunset orange, but more muted" or "A warm taupe with hints of pink" - ColorSense understands these descriptions and converts them into actual colors you can see and use in your projects.
+
+**Key Features:**
+
+- Convert natural language color descriptions to visual colors with hex codes
+- Process multiple colors at once (separated by new lines, bullet points, or commas)
+- Beautiful, responsive UI with smooth animations
+- Display color name, hex code, and a brief description for each color
+
+## Why ColorSense?
+
+ColorSense was created to solve several practical problems:
+
+1. **Design Communication** - Helps designers and clients communicate color preferences more intuitively
+2. **Accessibility** - Allows people to visualize colors described in text
+3. **Creative Exploration** - Enables experimentation with color palettes using natural language
+4. **Education** - Teaches the relationship between color descriptions and visual representations
+
+## Tech Stack
+
+ColorSense is built with modern web technologies:
+
+- **Next.js 15.3.0** - React framework with App Router
+- **React 19.0.0** - UI library
+- **TypeScript** - Type-safe JavaScript
+- **Framer Motion** - Animations library
+- **Google Generative AI** - AI model for color interpretation (Gemini 2.0 Flash-Lite)
+- **Tailwind CSS 4** - Utility-first CSS framework
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18.17.0 or later
+- pnpm (recommended), npm, or yarn
+- Google AI Studio API Key
+
+### Installation
+
+1. Clone the repository
+
+   ```bash
+   git clone https://github.com/yourusername/colorsense.git
+   cd colorsense
+   ```
+
+2. Install dependencies
+
+   ```bash
+   pnpm install
+   ```
+
+3. Create a `.env.local` file in the root directory
+
+   ```
+   GOOGLE_AI_API_KEY=your_google_ai_studio_api_key
+   ```
+
+4. Update `next.config.ts` to include environment variables
+
+   ```typescript
+   import type { NextConfig } from "next";
+
+   const nextConfig: NextConfig = {
+     env: {
+       GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY,
+     },
+   };
+
+   export default nextConfig;
+   ```
+
+5. Run the development server
+
+   ```bash
+   pnpm dev
+   ```
+
+6. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+## How to Use
+
+1. Enter a color description (e.g., "sunset orange", "deep ocean blue")
+2. For multiple colors, enter each on a new line or use bullet points:
+   ```
+   * Warm taupe
+   * Camel
+   * Mushroom brown
+   ```
+3. Click "Get Colors" to generate visualizations for each color
+
+## Deployment
+
+ColorSense can be deployed on Vercel or any other hosting service that supports Next.js:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm build
+pnpm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Getting a Google AI API Key
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Visit [Google AI Studio](https://ai.google.dev/)
+2. Create an account or sign in
+3. Navigate to the API section
+4. Create a new API key
+5. Add the key to your `.env.local` file
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Contributing
 
-## Learn More
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-To learn more about Next.js, take a look at the following resources:
+## License
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Acknowledgements
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Google AI Studio for providing the Gemini API
+- The Next.js team for their excellent framework
+- All contributors and users of ColorSense
