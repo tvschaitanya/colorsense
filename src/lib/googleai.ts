@@ -6,14 +6,14 @@ export async function getColorFromText(colorDescription: string) {
   try {
     // Check for API key
     const apiKey = process.env.GOOGLE_AI_API_KEY;
-    
+
     if (!apiKey) {
       throw new Error('Google AI API key not found in environment variables');
     }
-    
+
     // Initialize the Google AI client with the new SDK
     const ai = new GoogleGenAI({ apiKey });
-    
+
     // Create the prompt for the model - improved to handle more complex descriptions
     const prompt = `
     Given this color description: "${colorDescription}"
@@ -34,14 +34,14 @@ export async function getColorFromText(colorDescription: string) {
       model: "gemini-2.0-flash-lite",
       contents: prompt,
     });
-    
+
     // Get the text from the response
     const responseText = response.text || '';
-    
+
     if (!responseText) {
       throw new Error('Empty response from AI');
     }
-    
+
     // Parse the JSON response
     try {
       // Try to extract JSON if it's not in the right format
@@ -51,9 +51,9 @@ export async function getColorFromText(colorDescription: string) {
         const jsonEnd = responseText.lastIndexOf('}') + 1;
         jsonText = responseText.substring(jsonStart, jsonEnd);
       }
-      
+
       return JSON.parse(jsonText);
-    } catch (error) {
+    } catch (jsonError) {
       console.error("Failed to parse response:", responseText);
       throw new Error("Invalid response format from AI");
     }
@@ -69,10 +69,10 @@ export async function getMultipleColorsFromText(colorDescriptions: string[]) {
   // This helps prevent API rate limit issues with large batches
   const batchSize = 5; // Process 5 colors at a time
   const results = [];
-  
+
   for (let i = 0; i < colorDescriptions.length; i += batchSize) {
     const batch = colorDescriptions.slice(i, i + batchSize);
-    
+
     // Process each color in the current batch in parallel
     const batchPromises = batch.map(async (description) => {
       try {
@@ -93,16 +93,16 @@ export async function getMultipleColorsFromText(colorDescriptions: string[]) {
         };
       }
     });
-    
+
     // Wait for the current batch to complete before moving to the next
     const batchResults = await Promise.all(batchPromises);
     results.push(...batchResults);
-    
+
     // Add a small delay between batches to avoid rate limits if needed
     if (i + batchSize < colorDescriptions.length) {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
   }
-  
+
   return results;
 }

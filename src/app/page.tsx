@@ -19,6 +19,14 @@ interface ColorResult {
   error: string | null;
 }
 
+// Define an interface for API response
+interface ColorApiResponse {
+  colorName: string;
+  hexCode: string;
+  description: string;
+  [key: string]: unknown;
+}
+
 export default function Home() {
   const [colorInput, setColorInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -144,7 +152,7 @@ export default function Home() {
 
         // Add categories to results
         const resultsWithCategories = data.results.map(
-          (result: any, index: number) => ({
+          (result: ColorApiResponse, index: number) => ({
             ...result,
             category: parsedColors[index]?.category,
           })
@@ -169,9 +177,13 @@ export default function Home() {
 
         setSingleResult(data);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error details:", err);
-      setError(err.message || "Something went wrong. Please try again.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -230,8 +242,8 @@ export default function Home() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 h-32"
               />
               <p className="text-xs text-gray-500">
-                Pro tip: Use categories like "Blues: navy, sky blue" for
-                grouping colors
+                Pro tip: Use categories like &quot;Blues: navy, sky blue&quot;
+                for grouping colors
               </p>
             </div>
 
@@ -281,7 +293,7 @@ export default function Home() {
                 <p>{error}</p>
                 {error.includes("API key") && (
                   <p className="mt-2 text-xs">
-                    Make sure you've created a .env.local file with your
+                    Make sure you&apos;ve created a .env.local file with your
                     GOOGLE_AI_API_KEY
                   </p>
                 )}
