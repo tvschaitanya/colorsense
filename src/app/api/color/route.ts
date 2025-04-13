@@ -2,11 +2,6 @@
 import { getColorFromText, getMultipleColorsFromText } from '@/lib/googleai';
 import { NextRequest, NextResponse } from 'next/server';
 
-interface ErrorObject {
-  message: string;
-  [key: string]: unknown;
-}
-
 export async function POST(request: NextRequest) {
   try {
     // Parse request body

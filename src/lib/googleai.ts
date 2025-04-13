@@ -53,7 +53,7 @@ export async function getColorFromText(colorDescription: string) {
       }
 
       return JSON.parse(jsonText);
-    } catch (jsonError) {
+    } catch (_) {
       console.error("Failed to parse response:", responseText);
       throw new Error("Invalid response format from AI");
     }
