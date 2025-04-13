@@ -1,11 +1,14 @@
-# ColorSense 🎨
+# 🎨 ColorSense
 
-**ColorSense** is an AI-powered web application that transforms text descriptions of colors into visual representations with accurate hex codes and descriptions.
+**ColorSense** is an AI-powered web application that transforms text descriptions of colors into visual representations with accurate hex codes and detailed descriptions.
 
-#Deploy on Vercel
+
+## 🚀 Deploy on Vercel
+
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/tvschaitanya/colorsense)
 
-## Screenshots
+
+## 📸 Screenshots
 
 ![ColorSense Demo](/screenshots/Main-Interface.jpeg)
 
