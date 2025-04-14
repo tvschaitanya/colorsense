@@ -299,18 +299,19 @@ export default function Home() {
                   htmlFor="colorDescription"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Describe colors
+                  Type your colors here
                 </label>
                 <textarea
                   id="colorDescription"
                   value={colorInput}
                   onChange={(e) => setColorInput(e.target.value)}
-                  placeholder="e.g. Earthy Neutrals: camel, taupe, warm beige"
+                  placeholder="Enter colors like: red, blue, green
+Or group them: Kitchen: yellow, cream, white"
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 h-32"
                 />
                 <p className="text-xs text-gray-500">
-                  Pro tip: Use categories like &quot;Blues: navy, sky blue&quot;
-                  for grouping colors
+                  Tip: Group colors by adding a category name followed by a
+                  colon (Kitchen: white, yellow)
                 </p>
               </div>
 
@@ -346,7 +347,7 @@ export default function Home() {
                     Processing...
                   </span>
                 ) : (
-                  "Get Colors"
+                  "Show Me Colors"
                 )}
               </motion.button>
             </motion.form>
@@ -363,18 +364,19 @@ export default function Home() {
                   htmlFor="suggestionQuery"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  What colors are you looking for?
+                  Tell us what you need colors for
                 </label>
                 <textarea
                   id="suggestionQuery"
                   value={suggestionQuery}
                   onChange={(e) => setSuggestionQuery(e.target.value)}
-                  placeholder="e.g. soft autumn palette, modern minimalist website, coastal living room"
+                  placeholder="Example: colors for my bedroom
+Or be specific: colors for a beach-themed bathroom"
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 h-32"
                 />
                 <p className="text-xs text-gray-500">
-                  Pro tip: Focus on color themes, moods, or styles for the best
-                  results
+                  Tip: Mention the room, mood, or style you want (modern
+                  kitchen, calm bedroom, etc.)
                 </p>
               </div>
 
@@ -410,7 +412,7 @@ export default function Home() {
                     Getting suggestions...
                   </span>
                 ) : (
-                  "Get Color Suggestions"
+                  "Get My Color Ideas"
                 )}
               </motion.button>
             </motion.form>
