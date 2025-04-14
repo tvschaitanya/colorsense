@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Define our new interfaces
+// Define our interfaces
 interface ParsedColor {
   color: string;
   category?: string;
@@ -15,7 +15,7 @@ interface ColorResult {
   colorName: string;
   hexCode: string;
   description: string;
-  category?: string; // Add category to results
+  category?: string;
   error: string | null;
 }
 
@@ -37,6 +37,8 @@ export default function Home() {
   } | null>(null);
   const [multiResults, setMultiResults] = useState<ColorResult[] | null>(null);
   const [error, setError] = useState("");
+  const [mode, setMode] = useState<"describe" | "suggest">("describe");
+  const [suggestionQuery, setSuggestionQuery] = useState("");
 
   // Enhanced color parsing function
   const parseStructuredColorInput = (input: string): ParsedColor[] => {
@@ -115,7 +117,7 @@ export default function Home() {
     return colors.length >= 1 ? colors : [input];
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleDescribeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!colorInput.trim()) {
@@ -189,6 +191,47 @@ export default function Home() {
     }
   };
 
+  const handleSuggestionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!suggestionQuery.trim()) {
+      setError("Please enter a suggestion query");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+    setSingleResult(null);
+    setMultiResults(null);
+
+    try {
+      const response = await fetch("/api/color", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ suggestionQuery }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to get color suggestions");
+      }
+
+      setMultiResults(data.results);
+    } catch (err: unknown) {
+      console.error("Error details:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Group results by category
   const groupedResults = multiResults
     ? multiResults.reduce((groups: Record<string, ColorResult[]>, result) => {
@@ -210,7 +253,7 @@ export default function Home() {
       >
         <h1 className="text-4xl font-bold text-gray-800 mb-2">ColorSense</h1>
         <p className="text-gray-600">
-          Describe colors and visualize them with AI
+          Describe colors or get AI color suggestions
         </p>
       </motion.div>
 
@@ -219,87 +262,183 @@ export default function Home() {
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-md bg-white rounded-xl shadow-lg overflow-hidden mb-8"
       >
-        <div className="p-6">
-          <motion.form
-            key="form"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            onSubmit={handleSubmit}
-            className="space-y-4"
+        <div className="flex border-b">
+          <button
+            onClick={() => setMode("describe")}
+            className={`flex-1 py-3 text-center font-medium transition ${
+              mode === "describe"
+                ? "text-blue-600 border-b-2 border-blue-500"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
           >
-            <div className="space-y-2">
-              <label
-                htmlFor="colorDescription"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Describe colors
-              </label>
-              <textarea
-                id="colorDescription"
-                value={colorInput}
-                onChange={(e) => setColorInput(e.target.value)}
-                placeholder="e.g. Earthy Neutrals: camel, taupe, warm beige"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 h-32"
-              />
-              <p className="text-xs text-gray-500">
-                Pro tip: Use categories like &quot;Blues: navy, sky blue&quot;
-                for grouping colors
-              </p>
-            </div>
+            Describe Colors
+          </button>
+          <button
+            onClick={() => setMode("suggest")}
+            className={`flex-1 py-3 text-center font-medium transition ${
+              mode === "suggest"
+                ? "text-blue-600 border-b-2 border-blue-500"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Get Suggestions
+          </button>
+        </div>
 
-            <motion.button
-              type="submit"
-              className="w-full py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              disabled={isLoading}
+        <div className="p-6">
+          {mode === "describe" ? (
+            <motion.form
+              key="describe-form"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              onSubmit={handleDescribeSubmit}
+              className="space-y-4"
             >
-              {isLoading ? (
-                <span className="flex items-center justify-center">
-                  <svg
-                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Processing...
-                </span>
-              ) : (
-                "Get Colors"
-              )}
-            </motion.button>
+              <div className="space-y-2">
+                <label
+                  htmlFor="colorDescription"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Describe colors
+                </label>
+                <textarea
+                  id="colorDescription"
+                  value={colorInput}
+                  onChange={(e) => setColorInput(e.target.value)}
+                  placeholder="e.g. Earthy Neutrals: camel, taupe, warm beige"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 h-32"
+                />
+                <p className="text-xs text-gray-500">
+                  Pro tip: Use categories like &quot;Blues: navy, sky blue&quot;
+                  for grouping colors
+                </p>
+              </div>
 
-            {error && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm"
+              <motion.button
+                type="submit"
+                className="w-full py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                disabled={isLoading}
               >
-                <p className="font-medium mb-1">Error:</p>
-                <p>{error}</p>
-                {error.includes("API key") && (
-                  <p className="mt-2 text-xs">
-                    Make sure you&apos;ve created a .env.local file with your
-                    GOOGLE_AI_API_KEY
-                  </p>
+                {isLoading ? (
+                  <span className="flex items-center justify-center">
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Processing...
+                  </span>
+                ) : (
+                  "Get Colors"
                 )}
-              </motion.div>
-            )}
-          </motion.form>
+              </motion.button>
+            </motion.form>
+          ) : (
+            <motion.form
+              key="suggest-form"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              onSubmit={handleSuggestionSubmit}
+              className="space-y-4"
+            >
+              <div className="space-y-2">
+                <label
+                  htmlFor="suggestionQuery"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  What colors are you looking for?
+                </label>
+                <textarea
+                  id="suggestionQuery"
+                  value={suggestionQuery}
+                  onChange={(e) => setSuggestionQuery(e.target.value)}
+                  placeholder="e.g. soft autumn palette, modern minimalist website, coastal living room"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 h-32"
+                />
+                <p className="text-xs text-gray-500">
+                  Pro tip: Focus on color themes, moods, or styles for the best
+                  results
+                </p>
+              </div>
+
+              <motion.button
+                type="submit"
+                className="w-full py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center">
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Getting suggestions...
+                  </span>
+                ) : (
+                  "Get Color Suggestions"
+                )}
+              </motion.button>
+            </motion.form>
+          )}
+
+          {error && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm"
+            >
+              <p className="font-medium mb-1">Error:</p>
+              <p>{error}</p>
+              {error.includes("API key") && (
+                <p className="mt-2 text-xs">
+                  Make sure you&apos;ve created a .env.local file with your
+                  GOOGLE_AI_API_KEY
+                </p>
+              )}
+              {error.includes("not related to colors") && (
+                <p className="mt-2 text-xs">
+                  This app is designed only for color-related queries. Try
+                  asking about color schemes, palettes, or design colors
+                  instead.
+                </p>
+              )}
+            </motion.div>
+          )}
         </div>
       </motion.div>
 
@@ -338,6 +477,20 @@ export default function Home() {
             exit={{ opacity: 0 }}
             className="w-full max-w-5xl"
           >
+            {/* Add query info if in suggestion mode */}
+            {mode === "suggest" && (
+              <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+                <h2 className="text-lg font-semibold mb-2">
+                  Color palette based on:
+                </h2>
+                <p className="text-gray-700">{suggestionQuery}</p>
+                <p className="text-xs text-gray-500 mt-2">
+                  These are AI-generated color suggestions focusing only on
+                  visual color properties
+                </p>
+              </div>
+            )}
+
             {Object.entries(groupedResults).map(
               ([category, colors], categoryIndex) => (
                 <motion.div

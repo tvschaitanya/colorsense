@@ -1,15 +1,21 @@
 // src/app/api/color/route.ts
-import { getColorFromText, getMultipleColorsFromText } from '@/lib/googleai';
+import { getColorFromText, getMultipleColorsFromText, getColorSuggestions } from '@/lib/googleai';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
     // Parse request body
     const body = await request.json();
-    const { colorDescription, colorDescriptions } = body;
+    const { colorDescription, colorDescriptions, suggestionQuery } = body;
 
+    // Check if we have a suggestion query
+    if (suggestionQuery) {
+      // Handle color suggestions based on query
+      const suggestions = await getColorSuggestions(suggestionQuery);
+      return NextResponse.json({ results: suggestions });
+    }
     // Check if we have a single color or multiple colors
-    if (colorDescriptions && Array.isArray(colorDescriptions)) {
+    else if (colorDescriptions && Array.isArray(colorDescriptions)) {
       // Handle multiple colors
       if (colorDescriptions.length === 0) {
         return NextResponse.json(
@@ -29,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     } else {
       return NextResponse.json(
-        { error: 'Color description is required' },
+        { error: 'Either color description or suggestion query is required' },
         { status: 400 }
       );
     }
