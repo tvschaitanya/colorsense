@@ -1,8 +1,21 @@
 // src/lib/googleai.ts
 import { GoogleGenAI } from "@google/genai";
 
+// Define interfaces for color responses
+interface ColorResponse {
+  colorName: string;
+  hexCode: string;
+  description: string;
+  category?: string;
+}
+
+interface ColorResult extends ColorResponse {
+  originalInput: string;
+  error: string | null;
+}
+
 // Function to process a single color
-export async function getColorFromText(colorDescription: string) {
+export async function getColorFromText(colorDescription: string): Promise<ColorResponse> {
   try {
     // Check for API key
     const apiKey = process.env.GOOGLE_AI_API_KEY;
@@ -52,7 +65,7 @@ export async function getColorFromText(colorDescription: string) {
         jsonText = responseText.substring(jsonStart, jsonEnd);
       }
 
-      return JSON.parse(jsonText);
+      return JSON.parse(jsonText) as ColorResponse;
     } catch {
       console.error("Failed to parse response:", responseText);
       throw new Error("Invalid response format from AI");
@@ -64,11 +77,11 @@ export async function getColorFromText(colorDescription: string) {
 }
 
 // Function to process multiple colors
-export async function getMultipleColorsFromText(colorDescriptions: string[]) {
+export async function getMultipleColorsFromText(colorDescriptions: string[]): Promise<ColorResult[]> {
   // Process each color description in parallel with rate limiting
   // This helps prevent API rate limit issues with large batches
   const batchSize = 5; // Process 5 colors at a time
-  const results = [];
+  const results: ColorResult[] = [];
 
   for (let i = 0; i < colorDescriptions.length; i += batchSize) {
     const batch = colorDescriptions.slice(i, i + batchSize);
@@ -81,16 +94,16 @@ export async function getMultipleColorsFromText(colorDescriptions: string[]) {
           originalInput: description,
           ...result,
           error: null
-        };
+        } as ColorResult;
       } catch (error) {
         console.error(`Error processing color "${description}":`, error);
         return {
           originalInput: description,
-          colorName: null,
-          hexCode: null,
-          description: null,
+          colorName: "",
+          hexCode: "",
+          description: "",
           error: error instanceof Error ? error.message : 'Unknown error'
-        };
+        } as ColorResult;
       }
     });
 
@@ -108,7 +121,7 @@ export async function getMultipleColorsFromText(colorDescriptions: string[]) {
 }
 
 // New function to get color suggestions based on a query
-export async function getColorSuggestions(query: string) {
+export async function getColorSuggestions(query: string): Promise<ColorResult[]> {
   try {
     const apiKey = process.env.GOOGLE_AI_API_KEY;
 
@@ -191,10 +204,10 @@ export async function getColorSuggestions(query: string) {
       }
 
       // Parse the JSON
-      const colorSuggestions = JSON.parse(jsonText);
+      const colorSuggestions = JSON.parse(jsonText) as ColorResponse[];
 
       // Add originalInput field to match the interface of getMultipleColorsFromText
-      return colorSuggestions.map((suggestion: any) => ({
+      return colorSuggestions.map((suggestion: ColorResponse) => ({
         originalInput: suggestion.colorName,
         colorName: suggestion.colorName,
         hexCode: suggestion.hexCode,
