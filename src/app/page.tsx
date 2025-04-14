@@ -373,8 +373,9 @@ export default function Home() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 h-32 resize-none"
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  Tip: Add context like "Relaxing colors for a bedroom,"
-                  "Vibrant kitchen tones," or "Polished interview colors."
+                  Tip: Add context like &quot;Relaxing colors for a
+                  bedroom,&quot; &quot;Vibrant kitchen tones,&quot; or
+                  &quot;Polished interview colors.&quot;
                 </p>
               </div>
 
