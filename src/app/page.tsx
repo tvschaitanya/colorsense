@@ -253,7 +253,8 @@ export default function Home() {
       >
         <h1 className="text-4xl font-bold text-gray-800 mb-2">ColorSense</h1>
         <p className="text-gray-600">
-          Describe colors or get AI color suggestions
+          Describe and visualize colors, or explore AI-generated color
+          suggestions.
         </p>
       </motion.div>
 
@@ -305,13 +306,11 @@ export default function Home() {
                   id="colorDescription"
                   value={colorInput}
                   onChange={(e) => setColorInput(e.target.value)}
-                  placeholder="Enter colors like: red, blue, green
-Or group them: Kitchen: yellow, cream, white"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 h-32"
+                  placeholder="e.g. Earthy Green, Ocean Blue, Warm Terracotta or Group: Earthy Tones"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 h-32 resize-none"
                 />
-                <p className="text-xs text-gray-500">
-                  Tip: Group colors by adding a category name followed by a
-                  colon (Kitchen: white, yellow)
+                <p className="text-sm text-gray-500 mt-1">
+                  Tip: Group colors like Earthy Tones: earthy green, sand beige.
                 </p>
               </div>
 
@@ -364,19 +363,18 @@ Or group them: Kitchen: yellow, cream, white"
                   htmlFor="suggestionQuery"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Tell us what you need colors for
+                  What colors are you looking for?
                 </label>
                 <textarea
                   id="suggestionQuery"
                   value={suggestionQuery}
                   onChange={(e) => setSuggestionQuery(e.target.value)}
-                  placeholder="Example: colors for my bedroom
-Or be specific: colors for a beach-themed bathroom"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 h-32"
+                  placeholder="e.g. Bedroom colors or specify: beachy bathroom, professional interview look"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 h-32 resize-none"
                 />
-                <p className="text-xs text-gray-500">
-                  Tip: Mention the room, mood, or style you want (modern
-                  kitchen, calm bedroom, etc.)
+                <p className="text-sm text-gray-500 mt-1">
+                  Tip: Add context like "Relaxing colors for a bedroom,"
+                  "Vibrant kitchen tones," or "Polished interview colors."
                 </p>
               </div>
 
@@ -563,9 +561,15 @@ Or be specific: colors for a beach-themed bathroom"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
-        className="mt-6 text-sm text-gray-500"
+        className="flex flex-col items-center justify-center text-center mt-6"
       >
-        Powered by Google AI Studio
+        <span className="text-sm text-gray-500">
+          Powered by Google AI Studio
+        </span>
+
+        <p className="text-gray-500 text-sm mt-2">
+          Sometimes AI might give answers that are wrong or confusing.
+        </p>
       </motion.div>
     </main>
   );
