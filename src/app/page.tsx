@@ -316,8 +316,8 @@ export default function Home() {
                       Enter single colors or multiple colors separated by commas
                     </li>
                     <li>
-                      Group colors with categories like "Living Room: sage
-                      green, cream, walnut"
+                      Group colors with categories like &quot;Living Room: sage
+                      green, cream, walnut&quot;
                     </li>
                     <li>
                       Be descriptive - the more detail, the better the color
@@ -389,11 +389,16 @@ export default function Home() {
                   <p className="font-medium">Examples:</p>
                   <ul className="list-disc pl-4 space-y-1">
                     <li>
-                      "What colors would look good for a beach-themed bathroom?"
+                      &quot;What colors would look good for a beach-themed
+                      bathroom?&quot;
                     </li>
-                    <li>"Suggest colors for a tech startup website"</li>
-                    <li>"Color palette for a summer wedding"</li>
-                    <li>"What shirt colors complement olive skin tone?"</li>
+                    <li>
+                      &quot;Suggest colors for a tech startup website&quot;
+                    </li>
+                    <li>&quot;Color palette for a summer wedding&quot;</li>
+                    <li>
+                      &quot;What shirt colors complement olive skin tone?&quot;
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -456,15 +461,15 @@ export default function Home() {
                   <p className="font-medium">Try these instead:</p>
                   {mode === "describe" ? (
                     <ul className="list-disc pl-4 space-y-1">
-                      <li>"Deep ocean blue"</li>
-                      <li>"The gold of autumn leaves"</li>
-                      <li>"Muted sage green"</li>
+                      <li>&quot;Deep ocean blue&quot;</li>
+                      <li>&quot;The gold of autumn leaves&quot;</li>
+                      <li>&quot;Muted sage green&quot;</li>
                     </ul>
                   ) : (
                     <ul className="list-disc pl-4 space-y-1">
-                      <li>"Colors for a minimalist living room"</li>
-                      <li>"Professional interview outfit colors"</li>
-                      <li>"Wedding color palette for spring"</li>
+                      <li>&quot;Colors for a minimalist living room&quot;</li>
+                      <li>&quot;Professional interview outfit colors&quot;</li>
+                      <li>&quot;Wedding color palette for spring&quot;</li>
                     </ul>
                   )}
                 </div>
