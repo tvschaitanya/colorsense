@@ -14,7 +14,56 @@ interface ColorResult extends ColorResponse {
   error: string | null;
 }
 
-// Function to process a single color
+// New validation function to check if the query is color-related
+async function validateColorQuery(query: string, ai: any): Promise<{ valid: boolean, reason?: string }> {
+  const validationPrompt = `
+  Given this user query: "${query}"
+  
+  Determine if this query is asking for COLOR recommendations or is describing COLORS.
+  Respond with a JSON object in this format:
+  {
+    "valid": boolean,
+    "reason": "explanation why this is or isn't valid"
+  }
+  
+  GUIDELINES:
+  - "valid": true if the query mentions specific colors, color schemes, color palettes, or is clearly asking for visual design colors
+  - "valid": false if the query doesn't mention colors or is asking for something unrelated to visual colors
+  - The explanation should be brief (10 words max)
+  `;
+
+  try {
+    const validationResponse = await ai.models.generateContent({
+      model: "gemini-2.0-flash-lite",
+      contents: [{ text: validationPrompt }],
+    });
+
+    const responseText = validationResponse.text || '';
+
+    // Extract and parse JSON
+    let jsonText = responseText;
+    if (responseText.includes('{') && responseText.includes('}')) {
+      const jsonStart = responseText.indexOf('{');
+      const jsonEnd = responseText.lastIndexOf('}') + 1;
+      jsonText = responseText.substring(jsonStart, jsonEnd);
+    }
+
+    const result = JSON.parse(jsonText);
+    return {
+      valid: result.valid,
+      reason: result.reason
+    };
+  } catch (error) {
+    console.error("Error validating color query:", error);
+    // Default to invalid if there's an error
+    return {
+      valid: false,
+      reason: "Error processing validation"
+    };
+  }
+}
+
+// Enhanced function to process a single color with validation
 export async function getColorFromText(colorDescription: string): Promise<ColorResponse> {
   try {
     // Check for API key
@@ -26,6 +75,12 @@ export async function getColorFromText(colorDescription: string): Promise<ColorR
 
     // Initialize the Google AI client with the new SDK
     const ai = new GoogleGenAI({ apiKey });
+
+    // Validate if the input is color-related
+    const validation = await validateColorQuery(colorDescription, ai);
+    if (!validation.valid) {
+      throw new Error(`This doesn't seem to be about colors: ${validation.reason}. Please describe a color like "forest green" or "warm sunset orange".`);
+    }
 
     // Create the prompt for the model - improved to handle more complex descriptions
     const prompt = `
@@ -40,6 +95,10 @@ export async function getColorFromText(colorDescription: string): Promise<ColorR
     
     Be precise - if the input is a specific named color (like "terracotta" or "sage green"), make sure your response matches that exact color.
     For longer or complex descriptions, extract the core color concept.
+    If this doesn't describe a color at all, respond with:
+    {
+      "error": "Not a valid color description"
+    }
     `;
 
     // Generate content using the new SDK format
@@ -65,8 +124,18 @@ export async function getColorFromText(colorDescription: string): Promise<ColorR
         jsonText = responseText.substring(jsonStart, jsonEnd);
       }
 
-      return JSON.parse(jsonText) as ColorResponse;
-    } catch {
+      const parsedResponse = JSON.parse(jsonText);
+
+      // Check if the response contains an error
+      if (parsedResponse.error) {
+        throw new Error(parsedResponse.error);
+      }
+
+      return parsedResponse as ColorResponse;
+    } catch (error) {
+      if (error instanceof Error && error.message === "Not a valid color description") {
+        throw error;
+      }
       console.error("Failed to parse response:", responseText);
       throw new Error("Invalid response format from AI");
     }
@@ -76,7 +145,7 @@ export async function getColorFromText(colorDescription: string): Promise<ColorR
   }
 }
 
-// Function to process multiple colors
+// Function to process multiple colors - adding validation to this function
 export async function getMultipleColorsFromText(colorDescriptions: string[]): Promise<ColorResult[]> {
   // Process each color description in parallel with rate limiting
   // This helps prevent API rate limit issues with large batches
@@ -120,7 +189,7 @@ export async function getMultipleColorsFromText(colorDescriptions: string[]): Pr
   return results;
 }
 
-// New function to get color suggestions based on a query
+// Enhanced function to get color suggestions with better validation
 export async function getColorSuggestions(query: string): Promise<ColorResult[]> {
   try {
     const apiKey = process.env.GOOGLE_AI_API_KEY;
@@ -132,30 +201,13 @@ export async function getColorSuggestions(query: string): Promise<ColorResult[]>
     // Initialize the Google AI client
     const ai = new GoogleGenAI({ apiKey });
 
-    // First, check if the query is related to colors
-    const validationPrompt = `
-    Given this user query: "${query}"
-    
-    Determine if this query is asking for COLOR recommendations or COLOR suggestions.
-    Respond with ONLY a single word:
-    - "VALID" if the query is asking for colors, color schemes, color palettes, or visual design colors
-    - "INVALID" if the query is asking for anything else (like general advice, information, opinions, etc.)
-    
-    Only respond with "VALID" or "INVALID" and nothing else.
-    `;
-
-    const validationResponse = await ai.models.generateContent({
-      model: "gemini-2.0-flash-lite",
-      contents: [{ text: validationPrompt }],
-    });
-
-    const validationResult = validationResponse.text?.trim().toUpperCase() || '';
-
-    if (validationResult === 'INVALID') {
-      throw new Error('This query is not related to colors. Please ask about color schemes, palettes, or design colors.');
+    // Enhanced validation for suggestion queries
+    const validation = await validateColorQuery(query, ai);
+    if (!validation.valid) {
+      throw new Error(`This doesn't seem to be about colors: ${validation.reason}. Try asking for color suggestions for a specific purpose like "colors for a beach-themed bedroom" or "professional outfit colors".`);
     }
 
-    // If valid, proceed with the color suggestion
+    // The color suggestion prompt - keeping the original prompt as it's well designed
     const colorPrompt = `
     I need color recommendations for: "${query}"
     

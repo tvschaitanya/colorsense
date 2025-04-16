@@ -306,12 +306,25 @@ export default function Home() {
                   id="colorDescription"
                   value={colorInput}
                   onChange={(e) => setColorInput(e.target.value)}
-                  placeholder="e.g. Earthy Green, Ocean Blue, Warm Terracotta or Group: Earthy Tones"
+                  placeholder="Enter color names or descriptions like 'Deep Forest Green' or 'The blue of a twilight sky'"
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 h-32 resize-none"
                 />
-                <p className="text-sm text-gray-500 mt-1">
-                  Tip: Group colors like Earthy Tones: earthy green, sand beige.
-                </p>
+                <div className="text-sm text-gray-500 mt-1 space-y-1">
+                  <p className="font-medium">Tips:</p>
+                  <ul className="list-disc pl-4 space-y-1">
+                    <li>
+                      Enter single colors or multiple colors separated by commas
+                    </li>
+                    <li>
+                      Group colors with categories like "Living Room: sage
+                      green, cream, walnut"
+                    </li>
+                    <li>
+                      Be descriptive - the more detail, the better the color
+                      match
+                    </li>
+                  </ul>
+                </div>
               </div>
 
               <motion.button
@@ -369,14 +382,20 @@ export default function Home() {
                   id="suggestionQuery"
                   value={suggestionQuery}
                   onChange={(e) => setSuggestionQuery(e.target.value)}
-                  placeholder="e.g. Bedroom colors or specify: beachy bathroom, professional interview look"
+                  placeholder="Ask for colors for specific purposes like 'Colors for a professional job interview outfit' or 'Calming bedroom colors for better sleep'"
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 h-32 resize-none"
                 />
-                <p className="text-sm text-gray-500 mt-1">
-                  Tip: Add context like &quot;Relaxing colors for a
-                  bedroom,&quot; &quot;Vibrant kitchen tones,&quot; or
-                  &quot;Polished interview colors.&quot;
-                </p>
+                <div className="text-sm text-gray-500 mt-1 space-y-1">
+                  <p className="font-medium">Examples:</p>
+                  <ul className="list-disc pl-4 space-y-1">
+                    <li>
+                      "What colors would look good for a beach-themed bathroom?"
+                    </li>
+                    <li>"Suggest colors for a tech startup website"</li>
+                    <li>"Color palette for a summer wedding"</li>
+                    <li>"What shirt colors complement olive skin tone?"</li>
+                  </ul>
+                </div>
               </div>
 
               <motion.button
@@ -417,6 +436,7 @@ export default function Home() {
             </motion.form>
           )}
 
+          {/* Enhanced Error Message Section */}
           {error && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -430,6 +450,24 @@ export default function Home() {
                   Make sure you&apos;ve created a .env.local file with your
                   GOOGLE_AI_API_KEY
                 </p>
+              )}
+              {error.includes("doesn't seem to be about colors") && (
+                <div className="mt-2 text-xs space-y-1">
+                  <p className="font-medium">Try these instead:</p>
+                  {mode === "describe" ? (
+                    <ul className="list-disc pl-4 space-y-1">
+                      <li>"Deep ocean blue"</li>
+                      <li>"The gold of autumn leaves"</li>
+                      <li>"Muted sage green"</li>
+                    </ul>
+                  ) : (
+                    <ul className="list-disc pl-4 space-y-1">
+                      <li>"Colors for a minimalist living room"</li>
+                      <li>"Professional interview outfit colors"</li>
+                      <li>"Wedding color palette for spring"</li>
+                    </ul>
+                  )}
+                </div>
               )}
               {error.includes("not related to colors") && (
                 <p className="mt-2 text-xs">
