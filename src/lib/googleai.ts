@@ -1,11 +1,13 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Define interfaces for color responses
+// Enhanced interfaces to handle broader color contexts
 interface ColorResponse {
   colorName: string;
   hexCode: string;
   description: string;
   category?: string;
+  contextApplied?: string; // NEW: explains how color relates to input
+  rationale?: string;      // NEW: why this color fits the context
 }
 
 interface ColorResult extends ColorResponse {
@@ -13,30 +15,45 @@ interface ColorResult extends ColorResponse {
   error: string | null;
 }
 
-// New validation function to check if the query is color-related
+// Enhanced validation function for implicit and explicit color contexts
 async function validateColorQuery(
   query: string,
   ai: GoogleGenAI
-): Promise<{ valid: boolean; reason?: string }> {
+): Promise<{ valid: boolean; reason?: string; colorContext?: string }> {
   const validationPrompt = `
   Given this user query: "${query}"
   
-  Determine if this query is asking for COLOR recommendations or is describing COLORS.
+  Determine if this query is DIRECTLY or INDIRECTLY related to colors, color recommendations, visual aesthetics, or design choices where color would be a significant factor.
+  
   Respond with a JSON object in this format:
   {
     "valid": boolean,
-    "reason": "explanation why this is or isn't valid"
+    "reason": "explanation why this is or isn't valid",
+    "colorContext": "what color context is implied if not explicit"
   }
   
-  GUIDELINES:
-  - "valid": true if the query mentions specific colors, color schemes, color palettes, or is clearly asking for visual design colors
-  - "valid": false if the query doesn't mention colors or is asking for something unrelated to visual colors
-  - The explanation should be brief (10 words max)
+  GUIDELINES FOR DETERMINING COLOR RELEVANCE:
+  - VALID contexts include (but are not limited to):
+    * Explicit color mentions (e.g., "blue sky", "red dress")
+    * Design contexts (e.g., "wedding theme", "website design", "logo for coffee shop")
+    * Mood/feeling requests (e.g., "calming bedroom", "energetic presentation")
+    * Nature references (e.g., "autumn forest", "ocean sunset")
+    * Brand identity (e.g., "tech startup branding", "luxury fashion palette")
+    * Cultural references (e.g., "Scandinavian style", "Bohemian aesthetic")
+    * Seasonal references (e.g., "summer vibes", "winter holiday")
+    * Material references where color is important (e.g., "marble countertop", "wood paneling")
+    * Time of day (e.g., "midnight", "sunrise", "golden hour")
+    * Foods and beverages (e.g., "coffee", "strawberry", "mint")
+    * Emotions (e.g., "passionate", "serene", "melancholic")
+  
+  - INVALID contexts are those completely unrelated to visual design or appearance
+  
+  - For indirect references, identify the IMPLIED color context
   `;
 
   try {
     const validationResponse = await ai.models.generateContent({
-      model: "gemini-2.0-flash-lite",
+      model: "gemini-2.0-flash-lite", // Keeping original model for compatibility
       contents: [{ text: validationPrompt }],
     });
 
@@ -53,18 +70,19 @@ async function validateColorQuery(
     const result = JSON.parse(jsonText);
     return {
       valid: result.valid,
-      reason: result.reason
+      reason: result.reason,
+      colorContext: result.colorContext || undefined
     };
   } catch (error) {
     console.error("Error validating color query:", error);
     return {
-      valid: false,
-      reason: "Error processing validation"
+      valid: true, // Default to true in case of error to avoid frustrating users
+      reason: "Proceeding with possible color context"
     };
   }
 }
 
-// Enhanced function to process a single color with validation
+// Enhanced color extraction with broader context understanding
 export async function getColorFromText(colorDescription: string): Promise<ColorResponse> {
   try {
     const apiKey = process.env.GOOGLE_AI_API_KEY;
@@ -73,28 +91,41 @@ export async function getColorFromText(colorDescription: string): Promise<ColorR
     const ai = new GoogleGenAI({ apiKey });
 
     const validation = await validateColorQuery(colorDescription, ai);
-    if (!validation.valid) {
-      throw new Error(`This doesn't seem to be about colors: ${validation.reason}. Please describe a color like "forest green" or "warm sunset orange".`);
-    }
+    
+    // If invalid but has color context, use that context
+    const contextToUse = !validation.valid && validation.colorContext 
+                         ? `${colorDescription} (implied context: ${validation.colorContext})` 
+                         : colorDescription;
 
     const prompt = `
-    Given this color description: "${colorDescription}"
+    Given this description: "${contextToUse}"
 
-    I want you to identify the exact color being described and respond only with a JSON object in this exact format, with no additional text:
+    I want you to identify or suggest an appropriate color based on this input. The input might be:
+    1. A direct color description like "forest green"
+    2. A mood/feeling like "calming" or "energetic" 
+    3. A theme like "beach" or "corporate"
+    4. A physical object or material like "terracotta" or "marble"
+    5. A brand or style reference like "Scandinavian" or "Art Deco"
+    6. A time of day or seasonal reference like "sunrise" or "autumn"
+    7. A food or beverage like "coffee" or "blueberry"
+    8. An emotion like "joy" or "melancholy"
+    
+    Respond only with a JSON object in this exact format, with no additional text:
     {
       "colorName": "the most accurate color name",
       "hexCode": "the hex code (e.g., #FF5733)",
-      "description": "a very brief description of the color (20 words max)"
+      "description": "a very brief description of the color (20 words max)",
+      "contextApplied": "explanation of how the color relates to the input (25 words max)"
     }
 
-    If this doesn't describe a color at all, respond with:
+    If this doesn't reasonably relate to any possible color context even with creative interpretation, respond with:
     {
-      "error": "Not a valid color description"
+      "error": "Unable to determine color relevance"
     }
     `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash-lite",
+      model: "gemini-2.0-flash-lite", // Keeping original model for compatibility
       contents: [{ text: prompt }],
     });
 
@@ -114,7 +145,12 @@ export async function getColorFromText(colorDescription: string): Promise<ColorR
       throw new Error(parsedResponse.error);
     }
 
-    return parsedResponse as ColorResponse;
+    return {
+      colorName: parsedResponse.colorName,
+      hexCode: parsedResponse.hexCode,
+      description: parsedResponse.description,
+      contextApplied: parsedResponse.contextApplied
+    } as ColorResponse;
 
   } catch (error) {
     console.error("Error getting color from text:", error);
@@ -122,6 +158,7 @@ export async function getColorFromText(colorDescription: string): Promise<ColorR
   }
 }
 
+// Original function with minimal changes to maintain compatibility
 export async function getMultipleColorsFromText(colorDescriptions: string[]): Promise<ColorResult[]> {
   const batchSize = 5;
   const results: ColorResult[] = [];
@@ -160,6 +197,7 @@ export async function getMultipleColorsFromText(colorDescriptions: string[]): Pr
   return results;
 }
 
+// Enhanced color suggestions with broader context understanding
 export async function getColorSuggestions(query: string): Promise<ColorResult[]> {
   try {
     const apiKey = process.env.GOOGLE_AI_API_KEY;
@@ -168,27 +206,37 @@ export async function getColorSuggestions(query: string): Promise<ColorResult[]>
     const ai = new GoogleGenAI({ apiKey });
 
     const validation = await validateColorQuery(query, ai);
-    if (!validation.valid) {
-      throw new Error(`This doesn't seem to be about colors: ${validation.reason}. Try asking for something like "colors for a beach-themed bedroom" or "professional outfit colors".`);
-    }
+    
+    // Use the implied context if available
+    const contextToUse = !validation.valid && validation.colorContext 
+                        ? `${query} (implied context: ${validation.colorContext})` 
+                        : query;
 
     const colorPrompt = `
-    I need color recommendations for: "${query}"
+    I need color recommendations for: "${contextToUse}"
 
+    This request might be directly about colors, or it could be about a theme, mood, brand, style, material, 
+    season, time of day, food, emotion, or any other context where color would be relevant.
+    
+    Even if the request doesn't explicitly mention colors, please interpret the color context and provide appropriate suggestions.
+    
     Please respond ONLY with a JSON array in this format:
     [
       {
         "colorName": "name of the suggested color",
         "hexCode": "the hex code (e.g., #FF5733)",
         "description": "a very brief description of the color's visual quality (15 words max)",
-        "category": "context-specific category based on the query"
+        "category": "context-specific category based on the query",
+        "rationale": "why this color works for the context (20 words max)"
       },
       ... more colors ...
     ]
+    
+    Provide 3-5 colors that would work well together in the context provided.
     `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash-lite",
+      model: "gemini-2.0-flash-lite", // Keeping original model for compatibility
       contents: [{ text: colorPrompt }],
     });
 
@@ -205,11 +253,12 @@ export async function getColorSuggestions(query: string): Promise<ColorResult[]>
     const colorSuggestions = JSON.parse(jsonText) as ColorResponse[];
 
     return colorSuggestions.map((suggestion: ColorResponse) => ({
-      originalInput: suggestion.colorName,
+      originalInput: query,
       colorName: suggestion.colorName,
       hexCode: suggestion.hexCode,
       description: suggestion.description,
       category: suggestion.category || 'Suggested Colors',
+      rationale: suggestion.rationale || '',
       error: null
     }));
   } catch (error) {
